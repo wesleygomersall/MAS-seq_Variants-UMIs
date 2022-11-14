@@ -8,11 +8,15 @@ def get_args():
   parser = argparse.ArgumentParser(description="Extracts the barcodes and genes from fastqs based on records in a maf.")
   parser.add_argument("-f", "--fastq", help="ensembl mart file", required=True)
   parser.add_argument("-m", "--maf", help="FILTERED maf file associated with the input fastq", required=True)
-  parser.add_argument("-c", "--counts", help="name for output text file with occurrence counts for barcodes", required=False)
-  parser.add_argument("-o", "--out", help="output fasta file with id=fastq id, seq={20 base barcode}{gene}", required=True)
+  parser.add_argument("-c", "--counts", help="optional, name for output text file with occurrence counts for barcodes", required=False)
+  parser.add_argument("-o", "--outBase", help="output basename. For example: 'lib1' would create 'lib1_barcodes.fasta', 'lib1_genes.fasta', and 'lib1_concat.fasta'", required=True)
   return parser.parse_args()
 
 args = get_args()
+
+barcodeFile = f"{args.outBase}_barcodes.fasta"
+geneFile = f"{args.outBase}_genes.fasta"
+concatFile = f"{args.outBase}_concat.fasta"
 
 rawBarcodeLens = []
 adjustedBarcodeLens = []
@@ -30,10 +34,16 @@ rawBarcodesCounts = defaultdict(defaultCount)
 positions = {} #key = {"end1", "start2", "end2", "start3"}, value = int
 reads = SeqIO.parse(args.fastq, "fastq")
 currentRead = next(reads)
-with open(args.out, "w") as outFile:
+print("Started...")
+progressCount = 0
+with open(concatFile, "w") as concatFileOut, open(barcodeFile, "w") as barcodeFileOut, open(geneFile, "w") as geneFileOut:
     for aln in AlignIO.parse(args.maf, "maf"):
         while aln[1].name != currentRead.name:
+            #this runs once for each line of the fastq
             currentRead = next(reads)
+            progressCount += 1 
+            if progressCount % 5000 == 0:
+                print(f"Processed {progressCount} reads.")
         if len(positions) < 4:
             match aln[0].name:
                 case "CR1":
@@ -59,7 +69,9 @@ with open(args.out, "w") as outFile:
 #             if (positions["start3"] - positions["end2"]) >= 15 and (positions["start3"] - positions["end2"]) <= 25:
             if (positions["start3"] - positions["end2"]) == 20:
                 rawBarcodesCounts[rawBarcode] += 1
-                outFile.write(f">{currentRead.id}\n{rawBarcode}{rawGene}\n")
+                concatFileOut.write(f">{currentRead.id}\n{rawBarcode}{rawGene}\n")
+                barcodeFileOut.write(f">{currentRead.id}\n{rawBarcode}\n")
+                geneFileOut.write(f">{currentRead.id}\n{rawGene}\n")
                 
             positions.clear()
             # adjustedPositions.clear()
