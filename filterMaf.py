@@ -5,8 +5,8 @@ import argparse
 
 def get_args():
   parser = argparse.ArgumentParser(description="A program to keep maf records for reads which exactly have the CR1, CR2, andCR3 regions.")
-  parser.add_argument("-i", "--inFile", help="ensembl mart file", required=False)
-  parser.add_argument("-o", "--outFile", help="output fasta file", required=False)
+  parser.add_argument("-i", "--inFile", help="input maf file", required=False)
+  parser.add_argument("-o", "--outFile", help="output maf file", required=False)
   return parser.parse_args()
 
 args = get_args()
