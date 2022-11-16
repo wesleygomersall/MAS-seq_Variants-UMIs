@@ -6,7 +6,7 @@ import argparse
 
 def get_args():
   parser = argparse.ArgumentParser(description="Extracts the barcodes and genes from fastqs based on records in a maf.")
-  parser.add_argument("-f", "--fastq", help="ensembl mart file", required=True)
+  parser.add_argument("-f", "--fasta", help="fasta input used for alignment", required=True)
   parser.add_argument("-m", "--maf", help="FILTERED maf file associated with the input fastq", required=True)
   parser.add_argument("-o", "--outBase", help="output basename. For example: 'lib1' would create 'lib1_barcodes.fasta', 'lib1_genes.fasta', 'lib1_concat.fasta', 'lib1_counts.tsv', and 'lib1_dist.tsv'", required=True)
   return parser.parse_args()
@@ -33,7 +33,7 @@ rawBarcodesCounts = defaultdict(defaultCount)
 
 # adjustedPositions = {} #key = {"end1", "start2", "end2", "start3"}, value = int
 positions = {} #key = {"end1", "start2", "end2", "start3"}, value = int
-reads = SeqIO.parse(args.fastq, "fastq")
+reads = SeqIO.parse(args.fasta, "fasta")
 currentRead = next(reads)
 print("Started...")
 progressCount = 0
