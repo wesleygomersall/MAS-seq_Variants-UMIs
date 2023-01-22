@@ -1,0 +1,15 @@
+PacBio preprocessing:
+Run deconcatenation.py on the PacBio CCS Q20 file
+Run Lima on the deconcatenated output
+
+Nanopore and Pacbio libraries are then sent through Last commands to extract conserved regions.
+
+The resulting libraries should be sent through the extractRegionsFasta_imperfect.py to extract barcodes and genes
+
+run the barcodes and genes through _starcode.script_ to make barcode clusters
+
+then the barcode gene results will go into _lammassemble.script_ to allign barcode clusters
+
+those files go into final_output_MSA.py to generate the format requestewd for the final output
+
+the lib 4 and lib 5 results from those can go into quality_binning.py to generate the confidence groups that the Plesa lab is using
