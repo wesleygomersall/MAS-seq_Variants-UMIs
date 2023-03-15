@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Adapted from Calin's deconcatenation script
+# Adapted from Calin's deconcatenation script deconcat2.py
 
 from Bio.Seq import Seq
 from Bio import SeqIO
@@ -15,32 +15,31 @@ def get_filenames() -> tuple:
     parser = argparse.ArgumentParser(description="Get file paths for input CCS FASTQ file and output monomer FASTQ file.")
     parser.add_argument("-f", "--file", help="Absolute path to input CCS file", required=True)
     parser.add_argument("-o", "--output", help="Output monomer filename", required=True)
-    parser.add_argument("-s", "--sequences", help="FASTA filename containing sequences of conserved regions and library indices", required=True)
+    parser.add_argument("-s", "--sequences", help="FASTA filename containing sequences of 3 conserved regions", required=True)
     args = parser.parse_args()
     return args.file, args.output, args.sequences
 
 
-def get_sequences(fname: str) -> tuple:
-    """Takes filename of FASTA containing conserved regions and library indices.
-    Returns a tuple containing a dictionary of conserved regions
-    and a dictionary of library indices."""
+def get_conserved_regions(fname: str) -> dict:
+    """Takes filename of FASTA containing conserved regions.
+    Extracts CR1, CR3. Takes 24 nt of reverse complement of CR1.
+    Returns a a dictionary of conserved regions."""
     conserved_regions: dict = {}   
-    index_fwd: dict = {}
 
     for seq_record in SeqIO.parse(fname, "fasta"):
-        for i in ("CR", "conserved", "conserved_region"):
-            if i in seq_record.id:
-                conserved_regions[seq_record.id] = str(seq_record.seq)
-        for j in ("index", "barcode"):
-            if j in seq_record.id:
-                index_fwd[seq_record.id] = str(seq_record.seq)
-    return conserved_regions, index_fwd
+        if "1" in seq_record.id:
+            conserved_regions[seq_record.id] = seq_record.seq.reverse_complement()[0:24]
+        elif "3" in seq_record.id:
+            conserved_regions[seq_record.id] = str(seq_record.seq)
+
+    return conserved_regions
 
 
 def find_monomers(seq_record, conserved_regions: dict) -> tuple:
     """
     Looks for CRs as defined in the input FASTA. In this implementation,
     [reverse complement of first 24 nt of CR1, last 24nt of CR3]
+    ['gtgtgaaattgttatccgctcaca','cacGACGTcaggtggcacttttcg']
     Returns: sequence before first sep, the rest of the sequence
     """
     sequence: Seq = seq_record.seq  # pull Seq object out of SeqRecord object
@@ -88,11 +87,15 @@ def find_monomers(seq_record, conserved_regions: dict) -> tuple:
 #################### SCRIPT ####################
 
 inpath, outfile, inseq = get_filenames()
+# for testing
+# inpath = "/projects/bgmp/shared/groups/2022/SKU/plesa/bmeluch/deconcat/pacbio_q20_test.fastq"
+# outfile = "monomer_test.fastq"
+# inseq = "cr_and_indices.fasta"
 
 # extract CR and index sequences
-conserved_regions, index_fwd = get_sequences(inseq)
+conserved_regions = get_conserved_regions(inseq)
 
-counter: int = 0    # count monomers per read
+counter: int = 0 # count monomers per read
 
 with open(outfile, 'w') as output:
     for seq_record in SeqIO.parse(inpath, "fastq"):
