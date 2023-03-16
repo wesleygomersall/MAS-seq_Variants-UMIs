@@ -28,7 +28,7 @@ def get_conserved_regions(fname: str) -> dict:
 
     for seq_record in SeqIO.parse(fname, "fasta"):
         if "1" in seq_record.id:
-            conserved_regions[seq_record.id] = seq_record.seq.reverse_complement()[0:24]
+            conserved_regions[seq_record.id] = str(seq_record.seq.reverse_complement()[0:24])
         elif "3" in seq_record.id:
             conserved_regions[seq_record.id] = str(seq_record.seq)
 

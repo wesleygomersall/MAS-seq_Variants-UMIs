@@ -8,14 +8,23 @@ params.outdir = "$PWD/results/$workflow.start-results"
 params.help = false
 params.length = 1200
 
-params.crfile = "./sequences/conserved_regions.fasta"
-params.indexfile = "./sequences/library_indices.fasta"
+params.crfile = "$baseDir/sequences/conserved_regions.fasta"
+params.indexfile = "$baseDir/sequences/library_indices.fasta"
 
+STATS_SCRIPT = "$baseDir/src/summary_stats_hist.py"
+DECONCAT_SCRIPT = "$baseDir/src/deconcatenation.py"
+FILTERMAF_SCRIPT = "$baseDir/src/filterMaf.py"
+EXTRACT_SCRIPT = "$baseDir/src/extractRegionsFasta_imperfect.py"
+STARCODE_SCRIPT = "SOMETHING"
+LAMASSEMBLE_SCRIPT = "$baseDir/src/runLamassemble.py"
+FINALFORMAT_SCRIPT = "$baseDir/src/final_output_MSA.py"
+CONFBINNNG_SCRIPT = "$baseDir/src/quality_binning.py"
 
-STATS_SCRIPT = "./src/summary_stats_hist.py"
-DECONCAT_SCRIPT = "./src/deconcatenation.py"
+//name_matcher = params.infile =~ /([^\/]+)\..+$/
+//input_file = file(params.infile)
+base_file_name = "test" //input_file.getSimpleName()
+//println base_file_name
 
-base_file_name = "test"
 
 ////////////////////////////// WORKFLOW //////////////////////////////
 
@@ -27,12 +36,23 @@ workflow {
 
     deconcat_ch = deconcat(read_files_ch, "fastq").deconcatfq.flatten()
 
-    if (platform == 'pacbio')
+    if (params.platform == 'pacbio')
         demuxed_ch = demux(deconcat_ch, "fastq").demuxfq.flatten()
-    else if (platform == 'nanopore')
+    else if (params.platform == 'nanopore')
         demuxed_ch = deconcat_ch
 
-    filtered_ch = length_filter(demuxed_ch, "fasta").filteredfa.flatten()
+    //prepro_ch = length_filter(demuxed_ch, "fasta").filteredfa.flatten()
+
+    //last_ch = LAST(prepro_ch).filt-maf.flatten()
+
+    //extract(prepro_ch, last_ch.filt-maf.flatten())
+
+    //sc_cluster_ch = starcode_cluster()
+
+    //lamassemble_cluster(prepro_ch, sc_cluster_ch) | final_format
+
+    //conf_binning(lib4file, lib5file)
+
 }
 
 ////////////////////////////// PROCESSES //////////////////////////////
@@ -152,6 +172,136 @@ process length_filter {
     """
 }
 
+// step 5: Run LAST on preprocessed files, filter output
+process LAST {
+
+    publishDir path: "$params.outdir/05_LAST", mode: "copy", overwrite: false
+
+    input:
+    path infile
+
+    output:
+    path "*-raw.maf", emit: maf
+    path "*-filt.maf", emit: filt-maf
+
+    script:
+    """
+    if [[ ! -e "consdb.prj" ]]; then
+        echo "Making LAST database"
+        lastdb consdb $params.crfile
+    else
+        echo "LAST database or consdb.proj already exists."
+    fi
+
+    echo "Finding conserved regions in FASTA."
+    lastal consdb $infile > $base_file_name-raw.maf
+
+    $FILTERMAF_SCRIPT -i $base_file_name-raw.maf -o $base_file_name-filt.maf
+    """
+}
+
+// step 6: Extract genes and barcodes
+process extract {
+
+    publishDir path: "$params.outdir/06_extract", mode: "copy", overwrite: false
+
+    input:
+    path infile_fasta
+    path infile_maf
+
+    output:
+    path "$base_file_name*"
+
+    script:
+    """
+    $EXTRACT_SCRIPT -f $infile_fasta -m $infile_maf -o $base_file_name
+    """
+}
+
+// step 7: Cluster barcodes using Starcode
+// process starcode_cluster {
+
+//     publishDir path: "$params.outdir/07_starcode", mode: "copy", overwrite: false
+
+//     input:
+//     path infile
+
+//     output:
+//     path /// txt????
+
+//     script:
+//     """
+//     starcode????
+//     """
+// }
+
+//step 8: Cluster genes using lamassemble
+process lamassemble_cluster {
+
+    publishDir path: "$params.outdir/08_lamassemble", mode: "copy", overwrite: false
+
+    input:
+    path infile_fasta
+    path infile_barcodes
+
+    output:
+    path "*consensus.fasta"
+
+    script:
+    """
+    $LAMASSEMBLE_SCRIPT -f $infile_fasta -s $infile_barcodes -o $base_file_name-consensus.fasta -t $base_file_name\-temp
+    """
+}
+
+//step 9: Format final output
+process final_format {
+
+    publishDir path: "$params.outdir/09_final_output", mode: "copy", overwrite: false
+
+    input:
+    path infile
+
+    output:
+    path "*.csv"
+
+    script:
+    """
+    $FINALFORMAT_SCRIPT -f $infile -o $base_file_name-final.csv
+    """
+}
+
+//step 10: Bin library 4 and 5 results into confidence categories
+process conf_binning {
+
+    publishDir path: "$params.outdir/10_confidence_bins", mode: "copy", overwrite: false
+
+    input:
+    path infile4
+    path infile5
+
+    output:
+    path "*.csv"
+
+    script:
+    """
+    $CONFBINNING_SCRIPT -lib4 abc -lib5 abc -o abc
+    """
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ////////////////////////////// FUNCTIONS //////////////////////////////
 def printHelp() 
@@ -161,3 +311,4 @@ def printHelp()
             """
             .stripIndent()
 }
+
