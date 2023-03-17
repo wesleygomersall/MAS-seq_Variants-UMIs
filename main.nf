@@ -1,9 +1,9 @@
 ////////////////////////////// PARAMETERS //////////////////////////////
 
-params.platform = "pacbio"
-//params.platform = "nanopore"
-params.infile = "/projects/bgmp/shared/groups/2022/SKU/plesa/test_files/pacbio/pacbio_q20_test.fastq"
-// params.infile = "/projects/bgmp/shared/groups/2022/SKU/plesa/uploads/data/nanopore_raw/barcode0{1,2,3,4,5}d.fastq"
+//params.platform = "pacbio"
+params.platform = "nanopore"
+//params.infile = "/projects/bgmp/shared/groups/2022/SKU/plesa/test_files/pacbio/pacbio_q20_test.fastq"
+params.infile = "/projects/bgmp/shared/groups/2022/SKU/plesa/test_files/nanopore/barcode0*d_test.fastq"
 params.outdir = "$PWD/results/$workflow.start-results"
 params.help = false
 params.length = 1200
@@ -15,41 +15,61 @@ STATS_SCRIPT = "$baseDir/src/summary_stats_hist.py"
 DECONCAT_SCRIPT = "$baseDir/src/deconcatenation.py"
 FILTERMAF_SCRIPT = "$baseDir/src/filterMaf.py"
 EXTRACT_SCRIPT = "$baseDir/src/extractRegionsFasta_imperfect.py"
-STARCODE_SCRIPT = "SOMETHING"
 LAMASSEMBLE_SCRIPT = "$baseDir/src/runLamassemble.py"
 FINALFORMAT_SCRIPT = "$baseDir/src/final_output_MSA.py"
 CONFBINNNG_SCRIPT = "$baseDir/src/quality_binning.py"
 
 //name_matcher = params.infile =~ /([^\/]+)\..+$/
 //input_file = file(params.infile)
-base_file_name = "test" //input_file.getSimpleName()
+//base_file_name = "test" //input_file.getSimpleName()
 //println base_file_name
-
 
 ////////////////////////////// WORKFLOW //////////////////////////////
 
 workflow {
 
-    read_files_ch = Channel.fromPath(params.infile, checkIfExists: true).flatten()
+    read_files_ch = Channel
+        .fromPath(params.infile, checkIfExists: true)
+        .flatten()
+        .map{file -> tuple(file.baseName, file)}
 
     initial_stats(read_files_ch, "fastq")
 
-    deconcat_ch = deconcat(read_files_ch, "fastq").deconcatfq.flatten()
+    deconcat_ch = deconcat(read_files_ch, "fastq").deconcatfq
 
     if (params.platform == 'pacbio')
-        demuxed_ch = demux(deconcat_ch, "fastq").demuxfq.flatten()
+        demuxed_ch = demux(deconcat_ch, "fastq")
+                        .demuxfq
+                        .flatten()
+                        .map{file -> tuple(file.baseName, file)}
+
     else if (params.platform == 'nanopore')
-        demuxed_ch = deconcat_ch
+        demuxed_ch = deconcat_ch.view()
 
-    //prepro_ch = length_filter(demuxed_ch, "fasta").filteredfa.flatten()
+    prepro_ch = length_filter(demuxed_ch, "fasta").filteredfa
 
-    //last_ch = LAST(prepro_ch).filt-maf.flatten()
 
-    //extract(prepro_ch, last_ch.filt-maf.flatten())
+    last_ch = LAST(prepro_ch)
+                .filtmaf
+                .view()
 
-    //sc_cluster_ch = starcode_cluster()
+    for_extract_ch = prepro_ch
+                        .join(last_ch)
+                        .view()
 
-    //lamassemble_cluster(prepro_ch, sc_cluster_ch) | final_format
+    extracted_ch = extract(for_extract_ch)
+                        .fastas
+                        .view()
+
+    sc_cluster_ch = starcode_cluster(extracted_ch)
+                    .barcodeclusters
+                    .view()
+
+    for_lamassemble_ch = prepro_ch
+                            .join(sc_cluster_ch)
+                            .view()
+
+    lamassemble_cluster(for_lamassemble_ch) | final_format
 
     //conf_binning(lib4file, lib5file)
 
@@ -68,7 +88,7 @@ process initial_stats {
     publishDir path: "$params.outdir/01_initial-stats", mode: "copy", overwrite: false
 
     input:
-    path infile
+    tuple val(base_file_name), file(infile)
     val filetype
 
     output: // all outputs with base_file_name in the filename (captures png histogram and txt stats)
@@ -76,7 +96,7 @@ process initial_stats {
 
     script:
     """
-    $STATS_SCRIPT -f $params.infile -o $base_file_name-initial-stats -t $filetype
+    $STATS_SCRIPT -f $infile -o $base_file_name-initial-stats -t $filetype
     """
 }
 
@@ -86,23 +106,23 @@ process deconcat {
     publishDir path: "$params.outdir/02_deconcat", mode: "copy", overwrite: false
 
     input:
-    path infile
+    tuple val(base_file_name), file(infile)
     val filetype
     
     output: // captures deconcat fastq (and deconcat/demux stats files for nanopore)
-    path "$base_file_name-deconcat.fastq", emit: deconcatfq
+    tuple val("$base_file_name"), path("$base_file_name-deconcat.fastq"), emit: deconcatfq
     path "$base_file_name-stats.*", emit: deconcatstats, optional: true
 
     script:
 
     if (params.platform == 'pacbio')
         """
-        $DECONCAT_SCRIPT -f $params.infile -o $base_file_name-deconcat.fastq -s $params.crfile
+        $DECONCAT_SCRIPT -f $infile -o $base_file_name-deconcat.fastq -s $params.crfile
         """
 
     else if (params.platform == 'nanopore') // Nanopore is already demuxed, so run stats now on each FASTQ in folder
         """
-        $DECONCAT_SCRIPT -f $params.infile -o $base_file_name-deconcat.fastq -s $params.crfile
+        $DECONCAT_SCRIPT -f $infile -o $base_file_name-deconcat.fastq -s $params.crfile
 
         for f in ./*.fastq; do
             b=`basename \$f .fastq`
@@ -117,17 +137,19 @@ process demux {
     publishDir path: "$params.outdir/03_demux", mode: "copy", overwrite: false
 
     input:
-    path deconcat_files
+    tuple val(base_file_name), path(infile)
     val filetype
 
     output: // captures demuxed fastqs and stats files for pacbio (and placeholder for nanopore)
-    path "*demux*.fastq", emit: demuxfq, optional: true
+
+    path("*.fastq"), emit: demuxfq, optional: true
     path "*demux*-stats.*", emit: demuxstats, optional: true
+    path "*.lima.*", emit: limacounts, optional: true
 
     script:
     if (params.platform == 'pacbio') // Pacbio is ready, run stats on each FASTQ in folder
         """
-        lima --split $deconcat_files $params.indexfile $base_file_name-demux.fastq
+        lima --same --split $infile $params.indexfile $base_file_name\\.fastq
         
         for f in ./*.fastq; do
             b=`basename \$f .fastq`
@@ -147,12 +169,12 @@ process length_filter {
     publishDir path: "$params.outdir/04_length-filter", mode: "copy", overwrite: false
 
     input:  // nanopore deconcat files, pacbio deconcat/demuxed files
-    path infile
+    tuple val(base_file_name), path(infile)
     val filetype
 
     output: // captures long and short filtered FASTAs
-    path "*-filt.fasta", emit: filteredfa
-    path "overlong/*.fasta", emit: overlongfa, optional: true
+    tuple val("$base_file_name"), path("*-prepro.fasta"), emit: filteredfa
+    path "*-overlong.fasta", emit: overlongfa, optional: true
     path "*-stats.*", emit: filteredstats
 
     script: // splits each FASTQ into 2 FASTAs, below/above specified read length, then runs stats script again
@@ -160,12 +182,12 @@ process length_filter {
     n=`basename $infile .fastq`
     bioawk -c fastx '{
         if (length(\$seq) > $params.length) 
-            print ">"\$name"\\n"\$seq > "/overlong/'\$n'.fasta"; 
+            print ">"\$name"\\n"\$seq > "'\$n'-overlong.fasta"; 
         else 
-            print ">"\$name"\\n"\$seq > "'\$n'-filt.fasta"
+            print ">"\$name"\\n"\$seq > "'\$n'-prepro.fasta"
         }' $infile
 
-    for f in ./*.fasta; do
+    for f in ./*-prepro.fasta; do
         b=`basename \$f .fasta`
         $STATS_SCRIPT -f \$f -o \$b-stats -t $filetype
     done
@@ -178,11 +200,13 @@ process LAST {
     publishDir path: "$params.outdir/05_LAST", mode: "copy", overwrite: false
 
     input:
-    path infile
+    tuple val(base_file_name), path(infile)
 
     output:
+    tuple val("$base_file_name"), path ("*-filt.maf"), emit: filtmaf
     path "*-raw.maf", emit: maf
-    path "*-filt.maf", emit: filt-maf
+    // tuple val("$base_file_name"), path ("*-raw.maf"), emit: filtmaf
+    // path "*-filt.maf", emit: maf
 
     script:
     """
@@ -206,11 +230,11 @@ process extract {
     publishDir path: "$params.outdir/06_extract", mode: "copy", overwrite: false
 
     input:
-    path infile_fasta
-    path infile_maf
+    tuple val(base_file_name), path(infile_fasta), path(infile_maf)
 
     output:
-    path "$base_file_name*"
+    tuple val("$base_file_name"), path("*_barcodes.fasta"), path("*_genes.fasta"), path("*_concat.fasta"),emit: fastas
+    path "*_*.tsv", emit: tsvcounts
 
     script:
     """
@@ -218,22 +242,22 @@ process extract {
     """
 }
 
-// step 7: Cluster barcodes using Starcode
-// process starcode_cluster {
+//step 7: Cluster barcodes using Starcode
+process starcode_cluster {
 
-//     publishDir path: "$params.outdir/07_starcode", mode: "copy", overwrite: false
+    publishDir path: "$params.outdir/07_starcode", mode: "copy", overwrite: false
 
-//     input:
-//     path infile
+    input:
+    tuple val(base_file_name), path(infile_barcodes), path(infile_genes), path(infile_concat)
 
-//     output:
-//     path /// txt????
+    output:
+    tuple val("$base_file_name"), path("*_clustered.txt"), emit: barcodeclusters
 
-//     script:
-//     """
-//     starcode????
-//     """
-// }
+    script:
+    """
+    starcode -i $infile -o $base_file_name-barcode_clustered.txt --sphere -d 1 --print-clusters --seq-id
+    """
+}
 
 //step 8: Cluster genes using lamassemble
 process lamassemble_cluster {
@@ -241,15 +265,14 @@ process lamassemble_cluster {
     publishDir path: "$params.outdir/08_lamassemble", mode: "copy", overwrite: false
 
     input:
-    path infile_fasta
-    path infile_barcodes
+    tuple val(base_file_name), path(infile_fasta), path(infile_barcodes)
 
     output:
-    path "*consensus.fasta"
+    tuple val("$base_file_name"), path("*consensus.fasta"), emit: consensusfa
 
     script:
     """
-    $LAMASSEMBLE_SCRIPT -f $infile_fasta -s $infile_barcodes -o $base_file_name-consensus.fasta -t $base_file_name\-temp
+    $LAMASSEMBLE_SCRIPT -f $infile_fasta -s $infile_barcodes -o $base_file_name-consensus.fasta -t $base_file_name-temp
     """
 }
 
@@ -259,7 +282,7 @@ process final_format {
     publishDir path: "$params.outdir/09_final_output", mode: "copy", overwrite: false
 
     input:
-    path infile
+    tuple val(base_file_name), path(infile)
 
     output:
     path "*.csv"
