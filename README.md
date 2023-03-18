@@ -29,7 +29,7 @@ In addition to the sequencing data, the pipeline requires files containing other
 
 ## Output Files
 
-The primary output of the pipeline is a .tsv file containing paired genes and barcodes. The columns contain:
+The primary output of the pipeline is a .csv file containing paired genes and barcodes. The columns contain:
 
 * Barcode sequence
 * Barcode count
