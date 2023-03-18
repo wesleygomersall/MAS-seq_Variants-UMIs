@@ -278,7 +278,13 @@ process final_format {
 def printHelp() 
 {
     log.info"""\
-            help
-            """
-            .stripIndent()
+    --platform: String specifying the sequencing platform origin of the data. Only accepts pacbio or nanopore. Defaults to pacbio.
+    --infile: Path to the raw FASTQ files. If sending multiple FASTQs at once (as for Oxford Nanopore data), use pattern matching to capture files. (e.g. /folder/data/nanopore/barcode0*d_test.fastq)
+    --outdir: Output directory for all results files. Will be populated with subfolders containing outputs for each process step. Default is <current working directory>/results/<run start timestamp>-results
+    --crfile: Path to FASTA file containing conserved region sequences.
+    --indexfile: Path to FASTA file containing library indices.
+    --length: Maximum monomer length in nt. Default is 1200. Sequences longer than length will not be included in the analysis.
+    --help: Prints help information.
+    """
+    .stripIndent()
 }
