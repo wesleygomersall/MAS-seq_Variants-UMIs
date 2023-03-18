@@ -28,8 +28,6 @@ def defaultCount():
 rawBarcodesCounts = defaultdict(defaultCount)
 
 #these would be used for adjusting the listed positions, but that didn't work as well as I hoped.
-# realCR2 = "GGTACCTAAGTGTGGCTGCGGAAC"
-# realCR3 = "GCACGACGTCAGGTGGCACTTTTCG"
 
 # adjustedPositions = {} #key = {"end1", "start2", "end2", "start3"}, value = int
 positions = {} #key = {"end1", "start2", "end2", "start3"}, value = int

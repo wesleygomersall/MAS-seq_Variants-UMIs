@@ -7,7 +7,7 @@ import re
 
 def get_args():
     parser = argparse.ArgumentParser(description="This script will create the output format that we want from the whole pipeline")
-    parser.add_argument("-f", help="tab seperated file with the barcode, count and sequence", type=str, required = True)
+    parser.add_argument("-f", help="Fasta file containing the consensussed barcode clusters", type=str, required = True)
     parser.add_argument("-o", help="output file", type=str, required = True)
     return parser.parse_args()
 
@@ -41,4 +41,5 @@ with open (f, "r") as fin, open (o,"w") as oout:
         translation =  rna_seq.translate(to_stop=True)
         translation2 =  rna_seq.translate()
         #protein = make_protein(sequence)
-        print (barcode,"\t",count, "\t", sequence,"\t", translation,"\t", translation2, "\t",f,sep = "", file = oout)
+        #print (barcode,"\t",count, "\t", sequence,"\t", translation,"\t", translation2, "\t",f,sep = "", file = oout)
+        print (barcode, count, sequence, translation, translation2, f, sep = ",", file = oout)

@@ -6,7 +6,7 @@ import argparse
 
 def get_args():
   parser = argparse.ArgumentParser(description="Extracts the barcodes and genes from fastqs based on records in a maf.")
-  parser.add_argument("-f", "--fastq", help="ensembl mart file", required=True)
+  parser.add_argument("-f", "--fasta", help="fasta input used for alignment", required=True)
   parser.add_argument("-m", "--maf", help="FILTERED maf file associated with the input fastq", required=True)
   parser.add_argument("-o", "--outBase", help="output basename. For example: 'lib1' would create 'lib1_barcodes.fasta', 'lib1_genes.fasta', 'lib1_concat.fasta', 'lib1_counts.tsv', and 'lib1_dist.tsv'", required=True)
   return parser.parse_args()
@@ -28,15 +28,15 @@ def defaultCount():
 rawBarcodesCounts = defaultdict(defaultCount)
 
 #these would be used for adjusting the listed positions, but that didn't work as well as I hoped.
-# realCR2 = "GGTACCTAAGTGTGGCTGCGGAAC"
-# realCR3 = "GCACGACGTCAGGTGGCACTTTTCG"
 
 # adjustedPositions = {} #key = {"end1", "start2", "end2", "start3"}, value = int
 positions = {} #key = {"end1", "start2", "end2", "start3"}, value = int
-reads = SeqIO.parse(args.fastq, "fastq")
+reads = SeqIO.parse(args.fasta, "fasta")
 currentRead = next(reads)
 print("Started...")
 progressCount = 0
+badCount = 0
+goodCount = 0
 with open(concatFile, "w") as concatFileOut, open(barcodeFile, "w") as barcodeFileOut, open(geneFile, "w") as geneFileOut:
     for aln in AlignIO.parse(args.maf, "maf"):
         while aln[1].name != currentRead.name:
@@ -49,7 +49,10 @@ with open(concatFile, "w") as concatFileOut, open(barcodeFile, "w") as barcodeFi
             match aln[0].name:
                 case "CR1":
                     # adjustedPositions["end1"] = aln[1].annotations["start"] + aln[1].annotations["size"]#pos+len
-                    positions["end1"] = aln[1].annotations["start"] + aln[1].annotations["size"]#pos+len
+                    if aln[1].seq[-3:] == "ATG":
+                        positions["end1"] = aln[1].annotations["start"] + aln[1].annotations["size"]#pos+len
+                    else:
+                        positions["end1"] = -100
                 case "CR2":
                     # adjustedPositions["start2"] = aln[1].annotations["start"] - realCR2.find(str(aln[0].seq))
                     positions["start2"] = aln[1].annotations["start"]
@@ -68,11 +71,18 @@ with open(concatFile, "w") as concatFileOut, open(barcodeFile, "w") as barcodeFi
                 rawBarcode = str(currentRead.reverse_complement().seq)[positions["end2"]:positions["start3"]]
                 rawGene = str(currentRead.reverse_complement().seq)[positions["end1"]-3:positions["start2"]]
 #             if (positions["start3"] - positions["end2"]) >= 15 and (positions["start3"] - positions["end2"]) <= 25:
-            if (positions["start3"] - positions["end2"]) == 20:
+            
+            if positions["end1"] == -100:
+                positions.clear()
+                badCount += 1
+                continue
+            #output the sequence
+            if (positions["start3"] - positions["end2"]) <= 21 and (positions["start3"] - positions["end2"]) >= 19:
                 rawBarcodesCounts[rawBarcode] += 1
                 concatFileOut.write(f">{currentRead.id}\n{rawBarcode}{rawGene}\n")
                 barcodeFileOut.write(f">{currentRead.id}\n{rawBarcode}\n")
                 geneFileOut.write(f">{currentRead.id}\n{rawGene}\n")
+                goodCount += 1
                 
             positions.clear()
             # adjustedPositions.clear()
@@ -80,6 +90,9 @@ with open(concatFile, "w") as concatFileOut, open(barcodeFile, "w") as barcodeFi
 print(min(rawBarcodeLens))
 print(max(rawBarcodeLens))
 print(sum(rawBarcodeLens) / len(rawBarcodeLens))
+
+print(f"rejected due to missing start codon: {badCount}")
+print(f"total kept: {goodCount}")
 
 countDistribution = {}
 with open(countFile, "w") as outFile:

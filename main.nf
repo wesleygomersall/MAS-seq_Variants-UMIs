@@ -1,9 +1,7 @@
 ////////////////////////////// PARAMETERS //////////////////////////////
 
-//params.platform = "pacbio"
-params.platform = "nanopore"
-//params.infile = "/projects/bgmp/shared/groups/2022/SKU/plesa/test_files/pacbio/pacbio_q20_test.fastq"
-params.infile = "/projects/bgmp/shared/groups/2022/SKU/plesa/test_files/nanopore/barcode0*d_test.fastq"
+params.platform = "pacbio"
+params.infile = "input file path goes here"
 params.outdir = "$PWD/results/$workflow.start-results"
 params.help = false
 params.length = 1200
@@ -14,15 +12,11 @@ params.indexfile = "$baseDir/sequences/library_indices.fasta"
 STATS_SCRIPT = "$baseDir/src/summary_stats_hist.py"
 DECONCAT_SCRIPT = "$baseDir/src/deconcatenation.py"
 FILTERMAF_SCRIPT = "$baseDir/src/filterMaf.py"
-EXTRACT_SCRIPT = "$baseDir/src/extractRegionsFasta_imperfect.py"
+SUMMAF_SCRIPT = "$baseDir/src/summarize_maf.py"
+EXTRACT_SCRIPT = "$baseDir/src/extractRegionsFasta_withEnds.py"
+STARCODE_LOCATION = "/projects/bgmp/shared/groups/2022/SKU/plesa/starcode/starcode"
 LAMASSEMBLE_SCRIPT = "$baseDir/src/runLamassemble.py"
 FINALFORMAT_SCRIPT = "$baseDir/src/final_output_MSA.py"
-CONFBINNNG_SCRIPT = "$baseDir/src/quality_binning.py"
-
-//name_matcher = params.infile =~ /([^\/]+)\..+$/
-//input_file = file(params.infile)
-//base_file_name = "test" //input_file.getSimpleName()
-//println base_file_name
 
 ////////////////////////////// WORKFLOW //////////////////////////////
 
@@ -44,43 +38,29 @@ workflow {
                         .map{file -> tuple(file.baseName, file)}
 
     else if (params.platform == 'nanopore')
-        demuxed_ch = deconcat_ch.view()
+        demuxed_ch = deconcat_ch
 
     prepro_ch = length_filter(demuxed_ch, "fasta").filteredfa
 
+    last_ch = LAST(prepro_ch).filtmaf
 
-    last_ch = LAST(prepro_ch)
-                .filtmaf
-                .view()
+    for_extract_ch = prepro_ch.join(last_ch)
 
-    for_extract_ch = prepro_ch
-                        .join(last_ch)
-                        .view()
+    extracted_ch = extract(for_extract_ch).fastas
 
-    extracted_ch = extract(for_extract_ch)
-                        .fastas
-                        .view()
+    sc_cluster_ch = starcode_cluster(extracted_ch).barcodeclusters
 
-    sc_cluster_ch = starcode_cluster(extracted_ch)
-                    .barcodeclusters
-                    .view()
-
-    for_lamassemble_ch = prepro_ch
-                            .join(sc_cluster_ch)
-                            .view()
+    for_lamassemble_ch = extracted_ch.join(sc_cluster_ch)
 
     lamassemble_cluster(for_lamassemble_ch) | final_format
-
-    //conf_binning(lib4file, lib5file)
-
 }
-
-////////////////////////////// PROCESSES //////////////////////////////
 
 if (params.help) {
 	printHelp()
 	exit 0
 }
+
+////////////////////////////// PROCESSES //////////////////////////////
 
 // step 1: get stats on input file
 process initial_stats {
@@ -124,7 +104,7 @@ process deconcat {
         """
         $DECONCAT_SCRIPT -f $infile -o $base_file_name-deconcat.fastq -s $params.crfile
 
-        for f in ./*.fastq; do
+        for f in ./*-deconcat.fastq; do
             b=`basename \$f .fastq`
             $STATS_SCRIPT -f \$f -o \$b-stats -t $filetype
         done
@@ -143,7 +123,7 @@ process demux {
     output: // captures demuxed fastqs and stats files for pacbio (and placeholder for nanopore)
 
     path("*.fastq"), emit: demuxfq, optional: true
-    path "*demux*-stats.*", emit: demuxstats, optional: true
+    path "*-stats.*", emit: demuxstats, optional: true
     path "*.lima.*", emit: limacounts, optional: true
 
     script:
@@ -202,11 +182,10 @@ process LAST {
     input:
     tuple val(base_file_name), path(infile)
 
-    output:
+    output: // outputs filtered 
     tuple val("$base_file_name"), path ("*-filt.maf"), emit: filtmaf
     path "*-raw.maf", emit: maf
-    // tuple val("$base_file_name"), path ("*-raw.maf"), emit: filtmaf
-    // path "*-filt.maf", emit: maf
+    path "*-summary.txt", emit: mafsummary
 
     script:
     """
@@ -219,6 +198,8 @@ process LAST {
 
     echo "Finding conserved regions in FASTA."
     lastal consdb $infile > $base_file_name-raw.maf
+
+    $SUMMAF_SCRIPT -f $infile -m $base_file_name-raw.maf -o $base_file_name-maf-summary.txt
 
     $FILTERMAF_SCRIPT -i $base_file_name-raw.maf -o $base_file_name-filt.maf
     """
@@ -233,7 +214,7 @@ process extract {
     tuple val(base_file_name), path(infile_fasta), path(infile_maf)
 
     output:
-    tuple val("$base_file_name"), path("*_barcodes.fasta"), path("*_genes.fasta"), path("*_concat.fasta"),emit: fastas
+    tuple val("$base_file_name"), path("*_barcodes.fasta"), path("*_genes.fasta"), emit: fastas
     path "*_*.tsv", emit: tsvcounts
 
     script:
@@ -248,14 +229,14 @@ process starcode_cluster {
     publishDir path: "$params.outdir/07_starcode", mode: "copy", overwrite: false
 
     input:
-    tuple val(base_file_name), path(infile_barcodes), path(infile_genes), path(infile_concat)
+    tuple val(base_file_name), path(infile_barcodes), path(infile_genes)
 
     output:
     tuple val("$base_file_name"), path("*_clustered.txt"), emit: barcodeclusters
 
     script:
     """
-    starcode -i $infile -o $base_file_name-barcode_clustered.txt --sphere -d 1 --print-clusters --seq-id
+    $STARCODE_LOCATION -i $infile_barcodes -o $base_file_name-barcode_clustered.txt --sphere -d 1 --print-clusters --seq-id
     """
 }
 
@@ -265,14 +246,14 @@ process lamassemble_cluster {
     publishDir path: "$params.outdir/08_lamassemble", mode: "copy", overwrite: false
 
     input:
-    tuple val(base_file_name), path(infile_fasta), path(infile_barcodes)
+    tuple val(base_file_name), path(infile_barcodes), path(infile_genes), path(infile_barcodes_clustered)
 
     output:
     tuple val("$base_file_name"), path("*consensus.fasta"), emit: consensusfa
 
     script:
     """
-    $LAMASSEMBLE_SCRIPT -f $infile_fasta -s $infile_barcodes -o $base_file_name-consensus.fasta -t $base_file_name-temp
+    $LAMASSEMBLE_SCRIPT -f $infile_genes -s $infile_barcodes_clustered -o $base_file_name-consensus.fasta -t $base_file_name-temp
     """
 }
 
@@ -293,39 +274,6 @@ process final_format {
     """
 }
 
-//step 10: Bin library 4 and 5 results into confidence categories
-process conf_binning {
-
-    publishDir path: "$params.outdir/10_confidence_bins", mode: "copy", overwrite: false
-
-    input:
-    path infile4
-    path infile5
-
-    output:
-    path "*.csv"
-
-    script:
-    """
-    $CONFBINNING_SCRIPT -lib4 abc -lib5 abc -o abc
-    """
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ////////////////////////////// FUNCTIONS //////////////////////////////
 def printHelp() 
 {
@@ -334,4 +282,3 @@ def printHelp()
             """
             .stripIndent()
 }
-

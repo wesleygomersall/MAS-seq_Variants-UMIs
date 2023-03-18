@@ -12,8 +12,8 @@ import argparse
 
 def get_filenames() -> tuple:
     """Parses filename arguments"""
-    parser = argparse.ArgumentParser(description="Get file paths for input CCS FASTQ file and output monomer FASTQ file.")
-    parser.add_argument("-f", "--file", help="Absolute path to input CCS file", required=True)
+    parser = argparse.ArgumentParser(description="Get file paths for input FASTQ file and output monomer FASTQ file.")
+    parser.add_argument("-f", "--file", help="Absolute path to input file", required=True)
     parser.add_argument("-o", "--output", help="Output monomer filename", required=True)
     parser.add_argument("-s", "--sequences", help="FASTA filename containing sequences of 3 conserved regions", required=True)
     args = parser.parse_args()
@@ -39,7 +39,6 @@ def find_monomers(seq_record, conserved_regions: dict) -> tuple:
     """
     Looks for CRs as defined in the input FASTA. In this implementation,
     [reverse complement of first 24 nt of CR1, last 24nt of CR3]
-    ['gtgtgaaattgttatccgctcaca','cacGACGTcaggtggcacttttcg']
     Returns: sequence before first sep, the rest of the sequence
     """
     sequence: Seq = seq_record.seq  # pull Seq object out of SeqRecord object
