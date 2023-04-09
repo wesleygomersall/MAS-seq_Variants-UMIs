@@ -18,13 +18,16 @@ args = get_args()
 #just in case it already exists, appending happens every else
 subprocess.run(f"rm {args.output}", shell=True)
 
+with open(args.fasta) as fastaInFile:
+	records = list(SeqIO.parse(fastaInFile, "fasta"))
+
 with open(args.starcodedBarcodes) as SBFile:
 	for i, clusterEntry in enumerate(SBFile):
 		clusterEntry = clusterEntry.strip().split()
 		barcode = clusterEntry[0]
 		print(barcode)
 		indexes = [int(value) for value in clusterEntry[3].split(",")]
-		#print(indexes)
+		print(indexes)
 
 		if len(indexes) == 1:
 			#read through remainder of 1 count lines (they are sorted! YAY!)
@@ -38,36 +41,22 @@ with open(args.starcodedBarcodes) as SBFile:
 				#print(clusterEntry)
 				barcode = clusterEntry[0]
 				indexes = [int(value) for value in clusterEntry[3].split(",")]
+				#print(indexes)
 				#onlyOneIndexList.append(indexes[0])
 				onlyOneDict[indexes[0]] = barcode
-			keepRecords = []
-			with open(args.fasta) as fastaInFile:
-				for j, record in enumerate(SeqIO.parse(fastaInFile, "fasta")):
-					if j > indexes[-1]:
-						break
-					if j in onlyOneDict.keys():
-						record.id = f"{onlyOneDict[j]}_1"
-						record.description = record.id
-						keepRecords.append(record)
+
+			keepRecordsAndID = [(records[i - 1], i) for i in onlyOneDict.keys()] 
+			for record,id in keepRecordsAndID:
+				record.id = f"{onlyOneDict[id]}_1"
+				record.description = record.id
+			keepRecords = [item[0] for item in keepRecordsAndID]
 			with open(args.output, "a") as outFile:
 				SeqIO.write(keepRecords, outFile, "fasta-2line")
 			break
 
-		keepRecords = []
-		with open(args.fasta) as fastaInFile:
-			for j, record in enumerate(SeqIO.parse(fastaInFile, "fasta")):
-				#print(j)
-				if j > indexes[-1]:
-					#print(j)
-					#print(indexes[-1])
-					break
-				if j in indexes:
-					#print(j)
-					keepRecords.append(record)
-			with open(args.tempFile, 'w') as outFile:
-				#print("outputting")
-				SeqIO.write(keepRecords, outFile, "fasta-2line")
-		#break
+		with open(args.tempFile, 'w') as outFile:
+			keepRecords = [records[i - 1] for i in indexes]
+			SeqIO.write(keepRecords, outFile, "fasta-2line")
 		
 		result = subprocess.run(f"lamassemble -n {barcode}_{len(indexes)} promethion.mat {args.tempFile} >> {args.output}", capture_output=True, text=True, shell=True)
 		print(result.stderr)
@@ -78,5 +67,66 @@ with open(args.starcodedBarcodes) as SBFile:
 		#break
 		subprocess.run(f"rm {args.tempFile}", shell=True)
 
-		#if i >= 50:
-		#	break
+
+#with open(args.starcodedBarcodes) as SBFile:
+#	for i, clusterEntry in enumerate(SBFile):
+#		clusterEntry = clusterEntry.strip().split()
+#		barcode = clusterEntry[0]
+#		print(barcode)
+#		indexes = [int(value) for value in clusterEntry[3].split(",")]
+#		#print(indexes)
+#
+#		if len(indexes) == 1:
+#			#read through remainder of 1 count lines (they are sorted! YAY!)
+#			print("getting singletons")
+#			#onlyOneIndexList = []
+#			#onlyOneIndexList.append(indexes[0])
+#			onlyOneDict = {}
+#			onlyOneDict[indexes[0]] = barcode
+#			for line in SBFile:
+#				clusterEntry = line.strip().split()
+#				#print(clusterEntry)
+#				barcode = clusterEntry[0]
+#				indexes = [int(value) for value in clusterEntry[3].split(",")]
+#				#onlyOneIndexList.append(indexes[0])
+#				onlyOneDict[indexes[0]] = barcode
+#			keepRecords = []
+#			with open(args.fasta) as fastaInFile:
+#				for j, record in enumerate(SeqIO.parse(fastaInFile, "fasta")):
+#					if j > indexes[-1]:
+#						break
+#					if j in onlyOneDict.keys():
+#						record.id = f"{onlyOneDict[j]}_1"
+#						record.description = record.id
+#						keepRecords.append(record)
+#			with open(args.output, "a") as outFile:
+#				SeqIO.write(keepRecords, outFile, "fasta-2line")
+#			break
+#
+#		keepRecords = []
+#		with open(args.fasta) as fastaInFile:
+#			for j, record in enumerate(SeqIO.parse(fastaInFile, "fasta")):
+#				#print(j)
+#				if j > indexes[-1]:
+#					#print(j)
+#					#print(indexes[-1])
+#					break
+#				if j in indexes:
+#					#print(j)
+#					keepRecords.append(record)
+#			with open(args.tempFile, 'w') as outFile:
+#				#print("outputting")
+#				SeqIO.write(keepRecords, outFile, "fasta-2line")
+#		#break
+#		
+#		result = subprocess.run(f"lamassemble -n {barcode}_{len(indexes)} promethion.mat {args.tempFile} >> {args.output}", capture_output=True, text=True, shell=True)
+#		print(result.stderr)
+#		if result.stderr != "":
+#			regexResult = search(r"(\d+) out of (\d+) sequences", result.stderr)
+#			#print(f"{regexResult.group(1)} out of {regexResult.group(2)}")
+#		
+#		#break
+#		subprocess.run(f"rm {args.tempFile}", shell=True)
+#
+#		#if i >= 50:
+#		#	break
