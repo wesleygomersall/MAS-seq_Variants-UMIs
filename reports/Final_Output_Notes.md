@@ -85,7 +85,9 @@ An open question is why there are more "lamassemble: using 1 out of x sequences"
 ## Sequence Confidence Bins
 
 The Oxford Nanopore data for the blue libraries (Libraries 4 and 5) captured about 13000 more protein sequences than the PacBio data. However, the vast majority of these sequences were singletons, appearing in only one library with one barcode. Confidence level 4 had only 2,948 usable sequences.
+
 The PacBio data had a higher proportion of sequences in the first four confidence categories and a lower proportion of singletons. 11,205 of the PacBio sequences fell into confidence level 4 and are usable.
+
 Dr. Plesa's original analysis had 25,577 sequences with 16,367 of them falling into confidence level 4. Our results had a higher total number of sequences, but also a higher proportion of singletons. It is possible that we captured more gene-barcode pairs from the original data and picked up a bunch of extra singletons. However, our total amount of usable sequences in confidence level 4 or higher are much lower than that from the original analysis.
 
 
@@ -95,7 +97,7 @@ Our pipeline was able to extract more gene-barcode pairs from the PacBio sequenc
 
 Based on the confidence bin results, PacBio data is still producing more gene-barcode pairs that could be usable for future experiments and/or training data. Oxford Nanopore either detects a high number of singletons, or accumulates enough errors that duplicate molecules appear to be singletons. **At this point we still have to recommend using PacBio sequencing for this application.**
 
-However, the PacBio consensus sequences are based on much lower proportions of the gene sequences in each barcode cluster than the Oxford Nanopore consensus sequences. This may indicate more divergent sequences or more barcode collisions than expected in the PacBio data. The Oxford Nanopore consensus sequences are based on higher coverage as it stands, which may be good for reliability.
+However, the PacBio consensus sequences are based on much lower proportions of the gene sequences in each barcode cluster than the Oxford Nanopore consensus sequences. This may indicate more divergent sequences or more barcode collisions than expected in the PacBio data. The Oxford Nanopore consensus sequences are based on higher coverage of the gene sequence.
 
 Further debugging of the lamassemble step may answer and solve the problem of why the Pacbio data is showing more gaps and lower sequence similarity. 
 
