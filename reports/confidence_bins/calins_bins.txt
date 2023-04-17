@@ -1,0 +1,10 @@
+Confidence Level 1: Present in both blue libraries, with multiple barcodes:  5877
+Confidence Level 2: Present in both blue libraries:  11654
+Confidence Level 3: Present in at least one blue library, with multiple barcodes:  18871
+Confidence Level 4: Present in both blue libraries and/or has multiple barcodes:  20560
+Confidence Level 5: Present in only one blue library, with only one barcode:  19396
+Total pairs evaluated:  39956
+Sum of Level 4 and Level 5:  39956
+
+Blank seqs in Library 4:  57
+Blank seqs in Library 5:  49

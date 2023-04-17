@@ -3,6 +3,7 @@ from Bio import SeqIO
 import argparse
 import subprocess
 from re import search
+#import os
 
 def get_args():
   parser = argparse.ArgumentParser(description="Extracts the variable region sequences for each barcode cluster")
@@ -57,8 +58,10 @@ with open(args.starcodedBarcodes) as SBFile:
 		with open(args.tempFile, 'w') as outFile:
 			keepRecords = [records[i - 1] for i in indexes]
 			SeqIO.write(keepRecords, outFile, "fasta-2line")
-		
-		result = subprocess.run(f"lamassemble -n {barcode}_{len(indexes)} promethion.mat {args.tempFile} >> {args.output}", capture_output=True, text=True, shell=True)
+
+		#print(os.getcwd())
+
+		result = subprocess.run(f"lamassemble -n {barcode}_{len(indexes)} ../../../src/promethion.mat {args.tempFile} >> {args.output}", capture_output=True, text=True, shell=True)
 		print(result.stderr)
 		if result.stderr != "":
 			regexResult = search(r"(\d+) out of (\d+) sequences", result.stderr)

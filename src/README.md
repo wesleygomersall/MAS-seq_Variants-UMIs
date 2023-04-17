@@ -6,6 +6,29 @@ Descriptions can also be found in the script files or by running `<script> -h`.
 
 ## Details
 
+### `confidence_bins.py`
+`confidence_bins.py` takes two output files and counts the protein sequences falling into each confidence category (described below). The script is not incorporated into the Nextflow pipeline, it is run manually on the Library 4 and 5 CSV output files.
+
+* Confidence Level 1: Present in both blue libraries, with multiple barcodes
+* Confidence Level 2: Present in both blue libraries
+* Confidence Level 3: Present in at least one blue library, with multiple barcodes
+* Confidence Level 4: Present in both blue libraries and/or has multiple barcodes
+* Confidence Level 5: Present in only one blue library, with only one barcode
+
+#### Inputs
+* Two CSV files containing pipeline output, including barcodes and trimmed amino acid sequences
+
+#### Outputs
+* A text file containing counts of sequences falling into each confidence category.
+
+#### Options
+
+`-lib4`: Path to the input CSV file containing results for Library 4.
+
+`-lib5`: Path to the input CSV file containing results for Library 5.
+
+`-o`: Path to the output text file containing counts.
+
 ### `deconcatenation.py`
 `deconcatenation.py` deconcatenates reads into "monomers" including the indexes, conserved regions, gene, and barcode.
 
