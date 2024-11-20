@@ -99,4 +99,31 @@ Here is the command that should do it:
 ```
 # the command in the nextflow: lima --same --split $infile $params.indexfile $base_file_name\\.fastq
 /usr/bin/time -v lima --same --split skeraoutput.bam ../BGMP_Plesa_project/sequences/barcodes.fasta sk_lima_output.fastq
+
+# below is copied from my terminal output
+
+$ /usr/bin/time -v lima --same --split skeraoutput.bam ../BGMP_Plesa_project/sequences/barcodes.fasta sk_lima_output.fastq
+        Command being timed: "lima --same --split skeraoutput.bam ../BGMP_Plesa_project/sequences/barcodes.fasta sk_lima_output.fastq"
+        User time (seconds): 4923.36
+        System time (seconds): 183.14
+        Percent of CPU this job got: 476%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 17:51.07
+        Average shared text size (kbytes): 0
+        Average unshared data size (kbytes): 0
+        Average stack size (kbytes): 0
+        Average total size (kbytes): 0
+        Maximum resident set size (kbytes): 1042860
+        Average resident set size (kbytes): 0
+        Major (requiring I/O) page faults: 0
+        Minor (reclaiming a frame) page faults: 627675
+        Voluntary context switches: 4423634
+        Involuntary context switches: 149503
+        Swaps: 0
+        File system inputs: 0
+        File system outputs: 0
+        Socket messages sent: 0
+        Socket messages received: 0
+        Signals delivered: 0
+        Page size (bytes): 4096
+        Exit status: 0
 ```
