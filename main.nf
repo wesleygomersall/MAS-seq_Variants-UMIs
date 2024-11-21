@@ -172,7 +172,8 @@ process length_filter {
 
     for f in ./*-prepro.fasta; do
         b=`basename \$f .fasta`
-        $STATS_SCRIPT -f \$f -o \$b-stats -t $filetype
+	mkdir -p "\$b-stats"
+	fastqc -o \$b-stats -f fastq \$f
     done
     """
 }
