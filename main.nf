@@ -7,8 +7,8 @@ params.help = false
 params.length = 1200
 
 // params.crfile = "$baseDir/sequences/conserved_regions.fasta"
-params.arrfile = "$baseDir/sequences/array_barcodes.fasta"
-params.indexfile = "$baseDir/sequences/library_indices.fasta"
+params.arrfile = "$baseDir/sequences/mas16_primers.fasta"
+params.indexfile = "$baseDir/sequences/barcodes.fasta"
 
 // STATS_SCRIPT = "$baseDir/src/summary_stats_hist.py"
 // DECONCAT_SCRIPT = "$baseDir/src/deconcatenation.py"
