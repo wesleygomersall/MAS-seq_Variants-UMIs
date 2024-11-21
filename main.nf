@@ -6,7 +6,7 @@ params.outdir = "$PWD/results/$workflow.start-results"
 params.help = false
 params.length = 1200
 
-// params.crfile = "$baseDir/sequences/conserved_regions.fasta"
+params.crfile = "$baseDir/sequences/conserved_regions.fasta"
 params.arrfile = "$baseDir/sequences/mas16_primers.fasta"
 params.indexfile = "$baseDir/sequences/barcodes.fasta"
 
@@ -158,7 +158,7 @@ process length_filter {
     output: // captures long and short filtered FASTAs
     tuple val("$base_file_name"), path("*-prepro.fasta"), emit: filteredfa
     path "*-overlong.fasta", emit: overlongfa, optional: true
-    path "*-stats.*", emit: filteredstats
+    // path "*-stats/*", emit: filteredstats
 
     script: // splits each FASTQ into 2 FASTAs, below/above specified read length, then runs stats script again
     """
@@ -169,12 +169,6 @@ process length_filter {
         else 
             print ">"\$name"\\n"\$seq > "'\$n'-prepro.fasta"
         }' $infile
-
-    for f in ./*-prepro.fasta; do
-        b=`basename \$f .fasta`
-	mkdir -p "\$b-stats"
-	fastqc -o \$b-stats -f fastq \$f
-    done
     """
 }
 
@@ -240,7 +234,6 @@ process starcode_cluster {
 
     script:
     """
-    // $STARCODE_LOCATION -i $infile_barcodes -o $base_file_name-barcode_clustered.txt --sphere -d 1 --print-clusters --seq-id
     starcode -i $infile_barcodes -o $base_file_name-barcode_clustered.txt --sphere -d 1 --print-clusters --seq-id
     """
 }
