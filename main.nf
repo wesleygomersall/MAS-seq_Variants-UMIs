@@ -73,7 +73,8 @@ process initial_stats {
     // val filetype
 
     output: // all outputs with base_file_name in the filename (captures png histogram and txt stats)
-    path "$base_file_name*"
+    path "fastqc_output/${base_file_name}_fastqc.zip"
+    path "fastqc_output/${base_file_name}_fastqc.html"
 
     script:
     """
@@ -134,8 +135,8 @@ process demux {
     
     for f in ./*.fastq; do
         b=`basename \$f .fastq`
-	mkdir "\$b-stats"
-	fastqc -o \$b -f fastq \$f
+	mkdir -p "\$b-stats"
+	fastqc -o \$b-stats -f fastq \$f
     done
     """
 
