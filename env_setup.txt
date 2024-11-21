@@ -1,0 +1,14 @@
+conda create --prefix=M_Iso_Seq
+conda install -y python=3.10
+conda install -y bioconda::nextflow
+conda install -y bioawk=1.0
+conda install -y matplotlib=3.7.1
+conda install -y biopython=1.81
+conda install -y bioconda::last
+conda install -y regex=2022-10-31
+conda install -y bioconda::lima
+conda install -y starcode=1.4
+conda install -y lamassemble # not specified any version in the dependencies
+# new
+conda install -c bioconda pbskera
+conda install -y bioconda::fastqc

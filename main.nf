@@ -10,7 +10,7 @@ params.length = 1200
 params.arrfile = "$baseDir/sequences/array_barcodes.fasta"
 params.indexfile = "$baseDir/sequences/library_indices.fasta"
 
-STATS_SCRIPT = "$baseDir/src/summary_stats_hist.py"
+// STATS_SCRIPT = "$baseDir/src/summary_stats_hist.py"
 // DECONCAT_SCRIPT = "$baseDir/src/deconcatenation.py"
 FILTERMAF_SCRIPT = "$baseDir/src/filterMaf.py"
 SUMMAF_SCRIPT = "$baseDir/src/summarize_maf.py"
@@ -28,12 +28,12 @@ workflow {
         .flatten()
         .map{file -> tuple(file.baseName, file)}
 
-    initial_stats(read_files_ch, "fastq")
+    initial_stats(read_files_ch)
 
-    deconcat_ch = deconcat(read_files_ch, "fastq").deconcatfq
+    deconcat_ch = deconcat(read_files_ch).deconcatbam
 
     // if (params.platform == 'pacbio')
-    demuxed_ch = demux(deconcat_ch, "fastq")
+    demuxed_ch = demux(deconcat_ch)
                     .demuxfq
                     .flatten()
                     .map{file -> tuple(file.baseName, file)}
@@ -70,16 +70,18 @@ process initial_stats {
 
     input:
     tuple val(base_file_name), file(infile)
-    val filetype
+    // val filetype
 
     output: // all outputs with base_file_name in the filename (captures png histogram and txt stats)
     path "$base_file_name*"
 
     script:
     """
-    $STATS_SCRIPT -f $infile -o $base_file_name-initial-stats -t $filetype
+    // $STATS_SCRIPT -f $infile -o $base_file_name-initial-stats -t $filetype
     // Replace
     // This has gotta be FASTQC
+    mkdir fastqc_output
+    fastqc -o fastqc_output -f bam $infile
     """
 }
 
@@ -90,17 +92,20 @@ process deconcat {
 
     input:
     tuple val(base_file_name), file(infile)
-    val filetype
+    // val filetype
     
     output: // captures deconcat fastq (and deconcat/demux stats files for nanopore)
-    tuple val("$base_file_name"), path("$base_file_name-deconcat.fastq"), emit: deconcatfq
+    tuple val("$base_file_name"), path("$base_file_name-deconcat.bam"), emit: deconcatbam
     path "$base_file_name-stats.*", emit: deconcatstats, optional: true
 
     script:
 
     // if (params.platform == 'pacbio')
     """
-    $DECONCAT_SCRIPT -f $infile -o $base_file_name-deconcat.fastq -s $params.crfile
+    // $DECONCAT_SCRIPT -f $infile -o $base_file_name-deconcat.fastq -s $params.crfile
+
+    // params.arrfile = "$baseDir/sequences/array_barcodes.fasta"
+    skera split $infile $params.arrfile $base_file_name-deconcat.bam
     """
 
     // else if (params.platform == 'nanopore') // Nanopore is already demuxed, so run stats now on each FASTQ in folder
@@ -120,12 +125,12 @@ process demux {
 
     input:
     tuple val(base_file_name), path(infile)
-    val filetype
+    // val filetype
 
     output: // captures demuxed fastqs and stats files for pacbio (and placeholder for nanopore)
 
     path("*.fastq"), emit: demuxfq, optional: true
-    path "*-stats.*", emit: demuxstats, optional: true
+    path "*-stats/*", emit: demuxstats, optional: true
     path "*.lima.*", emit: limacounts, optional: true
 
     script:
@@ -135,9 +140,11 @@ process demux {
     
     for f in ./*.fastq; do
         b=`basename \$f .fastq`
-        $STATS_SCRIPT -f \$f -o \$b-stats -t $filetype
+        // $STATS_SCRIPT -f \$f -o \$b-stats -t $filetype
 	// Replace
     	// This has gotta be FASTQC
+	mkdir "\$b-stats"
+	fastqc -o \$b -f fastq \$f
     done
     """
 
@@ -283,10 +290,8 @@ process final_format {
 def printHelp() 
 {
     log.info"""\
-    // --platform: String specifying the sequencing platform origin of the data. Only accepts pacbio or nanopore. Defaults to pacbio.
     --infile: Path to the raw FASTQ files. If sending multiple FASTQs at once (as for Oxford Nanopore data), use pattern matching to capture files. (e.g. /folder/data/nanopore/barcode0*d_test.fastq)
     --outdir: Output directory for all results files. Will be populated with subfolders containing outputs for each process step. Default is <current working directory>/results/<run start timestamp>-results
-    // --crfile: Path to FASTA file containing conserved region sequences.
     --arrfile: Path to FASTA file containing PacBio array barcode sequences.
     --indexfile: Path to FASTA file containing library indices.
     --length: Maximum monomer length in nt. Default is 1200. Sequences longer than length will not be included in the analysis.
