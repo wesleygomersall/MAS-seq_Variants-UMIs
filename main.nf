@@ -77,9 +77,6 @@ process initial_stats {
 
     script:
     """
-    # $STATS_SCRIPT -f $infile -o $base_file_name-initial-stats -t $filetype
-    # Replace
-    # This has gotta be FASTQC
     mkdir fastqc_output
     fastqc -o fastqc_output -f bam $infile
     """
@@ -102,9 +99,6 @@ process deconcat {
 
     // if (params.platform == 'pacbio')
     """
-    # $DECONCAT_SCRIPT -f $infile -o $base_file_name-deconcat.fastq -s $params.crfile
-
-    # params.arrfile = "$baseDir/sequences/array_barcodes.fasta"
     skera split $infile $params.arrfile $base_file_name-deconcat.bam
     """
 
@@ -140,9 +134,6 @@ process demux {
     
     for f in ./*.fastq; do
         b=`basename \$f .fastq`
-        # $STATS_SCRIPT -f \$f -o \$b-stats -t $filetype
-	# Replace
-    	# This has gotta be FASTQC
 	mkdir "\$b-stats"
 	fastqc -o \$b -f fastq \$f
     done
