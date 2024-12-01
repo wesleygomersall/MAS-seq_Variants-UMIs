@@ -52,7 +52,7 @@ with open(args.starcodedBarcodes) as SBFile:
             keepRecordsAndID = [(records[i - 1], i) for i in onlyOneDict.keys()] 
             for record,id in keepRecordsAndID:
                 record.id = f"{onlyOneDict[id]}_1"
-                record.description = record.i
+                record.description = record.id
             keepRecords = [item[0] for item in keepRecordsAndID]
             with open(args.output, "a") as outFile:
                 SeqIO.write(keepRecords, outFile, "fasta-2line")
