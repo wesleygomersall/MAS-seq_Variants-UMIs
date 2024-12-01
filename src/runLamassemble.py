@@ -2,6 +2,7 @@
 from Bio import SeqIO
 import argparse
 import subprocess
+import random
 from re import search
 #import os
 
@@ -15,6 +16,8 @@ def get_args():
   return parser.parse_args()
 
 args = get_args()
+
+random.seed(1000)
 
 #just in case it already exists, appending happens every else
 subprocess.run(f"rm {args.output}", shell=True)
@@ -55,6 +58,12 @@ with open(args.starcodedBarcodes) as SBFile:
 				SeqIO.write(keepRecords, outFile, "fasta-2line")
 			break
 
+        if len(indexes) > 1000: 
+            # sample 1000 elements of the list indexes
+            sampled_indexes = random.sample(indexes, 1000)
+            # sort sampled_indexes
+            indexes = sampled_indexes.sort()
+                
 		with open(args.tempFile, 'w') as outFile:
 			keepRecords = [records[i - 1] for i in indexes]
 			SeqIO.write(keepRecords, outFile, "fasta-2line")
