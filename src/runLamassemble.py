@@ -61,8 +61,11 @@ with open(args.starcodedBarcodes) as SBFile:
         if len(indexes) > 1000: 
             # sample 1000 elements of the list indexes
             sampled_indexes = random.sample(indexes, 1000)
+            # print(len(indexes))
             # sort sampled_indexes
-            indexes = sampled_indexes.sort()
+            indexes = sampled_indexes
+            # print(sampled_indexes)
+            # print(indexes)
                 
         with open(args.tempFile, 'w') as outFile:
             keepRecords = [records[i - 1] for i in indexes]
