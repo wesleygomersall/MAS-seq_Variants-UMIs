@@ -151,3 +151,114 @@ Cached      : 55
         Page size (bytes): 4096
         Exit status: 0
 ```
+
+Rerun:
+
+```
+source activate /projects/bgmp/shared/groups/2024/novel-fluor/envs/M_Iso_Seq
+
+(M_Iso_Seq) [wesg@n0351|master|MAS-seq_Variants-UMIs] $ /usr/bin/time -v nextflow run main.nf --infile /projects/bgmp/shared/groups/2024/novel-fluor/shared/rawdata/BLUE/PacBio_MAS_ISO_seq_GC3F_6762/m64047_230308_062131.ccs.bam --arrfile /projects/bgmp/shared/groups/2024/novel-fluor/wesg/MAS-seq_Variants-UMIs/sequences/mas16_primers.fasta --indexfile /projects/bgmp/shared/groups/
+2024/novel-fluor/wesg/MAS-seq_Variants-UMIs/sequences/barcodes.fasta                                              
+Nextflow 24.10.2 is available - Please consider updating your version to it
+
+ N E X T F L O W   ~  version 24.10.1
+
+Launching `main.nf` [cheesy_volta] DSL2 - revision: 785cb394a8
+
+executor >  local (57)
+[e9/bdb436] initial_stats (1)       | 1 of 1 ✔
+[97/1456d9] deconcat (1)            | 1 of 1 ✔
+[df/8b04e9] demux (1)               | 1 of 1 ✔
+[48/66952f] length_filter (1)       | 9 of 9 ✔
+[41/35ec5b] LAST (9)                | 9 of 9 ✔
+[6f/270ad9] extract (9)             | 9 of 9 ✔
+[31/7adda2] starcode_cluster (9)    | 9 of 9 ✔
+[3a/0b1f66] lamassemble_cluster (9) | 9 of 9 ✔
+[9e/e59774] final_format (9)        | 9 of 9 ✔
+Completed at: 01-Dec-2024 22:37:47
+Duration    : 9h 8m 36s
+CPU hours   : 25.2
+Succeeded   : 57
+
+
+        Command being timed: "nextflow run main.nf --infile /projects/bgmp/shared/groups/2024/novel-fluor/shared/rawdata/BLUE/PacBio_MAS_ISO_seq_GC3F_6762/m64047_230308_062131.ccs.bam --arrfile /projects/bgmp/shared/groups/2024/novel-fluor/wesg/MAS-seq_Variants-UMIs/sequences/mas16_primers.fasta --indexfile /projects/bgmp/shared/groups/2024/novel-fluor/wesg/MAS-seq_Variants-UMIs/sequences/barcodes.fasta"
+        User time (seconds): 94279.55
+        System time (seconds): 12700.63
+        Percent of CPU this job got: 324%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 9:08:39
+        Average shared text size (kbytes): 0
+        Average unshared data size (kbytes): 0
+        Average stack size (kbytes): 0
+        Average total size (kbytes): 0
+        Maximum resident set size (kbytes): 22918972
+        Average resident set size (kbytes): 0
+        Major (requiring I/O) page faults: 31451
+        Minor (reclaiming a frame) page faults: 2211290883
+        Voluntary context switches: 113261402
+        Involuntary context switches: 1453789
+        Swaps: 0
+        File system inputs: 65880
+        File system outputs: 159148680
+        Socket messages sent: 0
+        Socket messages received: 0
+        Signals delivered: 0
+        Page size (bytes): 4096
+        Exit status: 0
+
+```
+
+look at that runtime!
+
+```
+source activate /projects/bgmp/shared/groups/2024/novel-fluor/envs/M_Iso_Seq
+(M_Iso_Seq) [wesg@n0352|master|MAS-seq_Variants-UMIs] $ /usr/bin/time -v nextflow run main.nf --infile /projects/bgmp/shared/groups/2024/novel-fluor/shared/rawdata/RED/PacBio_MAS_ISO_seq_GC3F_6761/m64047_230306_210601.ccs.bam --arrfile /projects/bgmp/sha
+red/groups/2024/novel-fluor/wesg/MAS-seq_Variants-UMIs/sequences/mas16_primers.fasta --indexfile /projects/bgmp/shared/groups/2
+024/novel-fluor/wesg/MAS-seq_Variants-UMIs/sequences/barcodes.fasta
+Nextflow 24.10.2 is available - Please consider updating your version to it
+
+ N E X T F L O W   ~  version 24.10.1
+
+Launching `main.nf` [thirsty_wiles] DSL2 - revision: 785cb394a8
+
+executor >  local (57)
+[1e/6b5829] initial_stats (1)       | 1 of 1 ✔
+[6f/ec8b0a] deconcat (1)            | 1 of 1 ✔
+[04/1c7926] demux (1)               | 1 of 1 ✔
+[7b/b98977] length_filter (1)       | 9 of 9 ✔
+[2c/798e93] LAST (9)                | 9 of 9 ✔
+[c9/e14dc8] extract (9)             | 9 of 9 ✔
+[b5/57667b] starcode_cluster (9)    | 9 of 9 ✔
+[58/9cd4a7] lamassemble_cluster (9) | 9 of 9 ✔
+[53/5c3fbe] final_format (9)        | 9 of 9 ✔
+Completed at: 02-Dec-2024 04:30:50
+Duration    : 15h 47s
+CPU hours   : 27.0
+Succeeded   : 57
+
+
+        Command being timed: "nextflow run main.nf --infile /projects/bgmp/shared/groups/2024/novel-fluor/shared/rawdata/RED/PacBio_MAS_ISO_seq_GC3F_6761/m64047_230306_210601.ccs.bam --arrfile /projects/bgmp/shared/groups/2024/novel-fluor/wesg/MAS-seq_Variants-UMIs/sequences/mas16_primers.fasta --indexfile /projects/bgmp/shared/groups/2024/novel-fluor/wesg/MAS-seq_Variants-UMIs/sequences/barcodes.fasta"
+        User time (seconds): 101135.04
+        System time (seconds): 17410.45
+        Percent of CPU this job got: 219%
+        Elapsed (wall clock) time (h:mm:ss or m:ss): 15:00:50
+        Average shared text size (kbytes): 0
+        Average unshared data size (kbytes): 0
+        Average stack size (kbytes): 0
+        Average total size (kbytes): 0
+        Maximum resident set size (kbytes): 39611424
+        Average resident set size (kbytes): 0
+        Major (requiring I/O) page faults: 16765
+        Minor (reclaiming a frame) page faults: 1999872006
+        Voluntary context switches: 155447918
+        Involuntary context switches: 1353369
+        Swaps: 0
+        File system inputs: 344
+        File system outputs: 98889976
+        Socket messages sent: 0
+        Socket messages received: 0
+        Signals delivered: 0
+        Page size (bytes): 4096
+        Exit status: 0
+```
+
+That is most definitely what is up!
