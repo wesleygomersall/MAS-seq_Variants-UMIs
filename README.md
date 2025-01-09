@@ -1,11 +1,14 @@
+# WIP 
+
 # Mapping Barcodes to Genes with Long-Read Sequencing
 
-### Jacob Jensen, Beata Meluch, Keenan Raleigh, Dr. Calin Plesa
+### Wesley Gomersall, Mahmoud al Mahmoud, Grace Hach, Dr. Calin Plesa
+
 --------------------------------------
 
 ## Overview
 
-This pipeline extracts paired gene and barcode sequences from long-read sequencing data produced from gene shuffling/protein engineering experiments in the Plesa Lab at the University of Oregon Knight Campus. It is designed to work with data from both Oxford Nanopore and PacBio sequencing platforms.
+This pipeline extracts paired gene and barcode sequences from long-read sequencing data produced from gene shuffling/protein engineering experiments in the Plesa Lab at the University of Oregon Knight Campus. It is designed to work with data from PacBio sequencing platform.
 
 ## Input Files
 
