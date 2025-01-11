@@ -10,17 +10,9 @@
 
 This pipeline extracts paired gene and barcode sequences from long-read sequencing data produced from gene shuffling/protein engineering experiments in the Plesa Lab at the University of Oregon Knight Campus. It is designed to work with data from PacBio sequencing platform.
 
-## Input Files
-
-The expected input format depends on the sequencing platform.
-
-For PacBio data: 
+## Input Files 
 
 * 1 FASTQ file containing CCS reads (*.ccs.fastq)
-
-For Oxford Nanopore data:
-
-* Multiple FASTQ files containing demultiplexed sequencing data. (Tested on a set of 5 files)
 
 In addition to the sequencing data, the pipeline requires files containing other sequences present in the DNA constructs:
 
@@ -28,7 +20,7 @@ In addition to the sequencing data, the pipeline requires files containing other
     * with header lines "CR1", "CR2", "CR3"
     * CR1 sequence should end with the ATG start codon.
 * 1 FASTA file containing barcode sequences for demultiplexing, with barcode number indicated in the header lines.
-
+* 1 FASTA file containing array barcodes for deconcatenating PacBio data using Skera
 
 ## Output Files
 
@@ -42,10 +34,7 @@ The primary output of the pipeline is a .csv file containing paired genes and ba
 
 Intermediate files are produced by each step of the pipeline. More details about outputs from each step are in /src/README.md.
 
-
 ## Options
-
-`--platform`: String specifying the sequencing platform origin of the data. Only accepts `pacbio` or `nanopore`. Defaults to `pacbio`.
 
 `--infile`: Path to the raw FASTQ files. If sending multiple FASTQs at once (as for Oxford Nanopore data), use pattern matching to capture files. (e.g. `/folder/data/nanopore/barcode0*d_test.fastq`)
 
@@ -53,16 +42,13 @@ Intermediate files are produced by each step of the pipeline. More details about
 
 `--crfile`: Path to FASTA file containing conserved region sequences.
 
+`--arrfile`: Path to FASTA file containing MAS seq primer sequences. 
+
 `--indexfile`: Path to FASTA file containing library indices.
 
 `--length`: Maximum monomer length in nt. Default is 1200. Sequences longer than `length` will not be included in the analysis.
 
 `--help`: Prints help information.
-
-## Notes
-
-The location of starcode will need to be updated in the beginning of the script to reflect where it is installed in your local environment.
-
 
 ## Dependencies
 
@@ -75,12 +61,12 @@ The location of starcode will need to be updated in the beginning of the script 
 | matplotlib  | 3.7.1         |
 | regex       | 2022.10.31    |
 | Lima        | 2.7.1         |
+| Skera       |               |
 | Biopython   | 1.81          |
 | bioawk      | 1.0           |
 | LAST        | 1452          |
 | lamassemble |               |
 | starcode    | 1.4           |
-
 
 ## References
 
@@ -97,5 +83,3 @@ lamassemble
 M. C. Frith, S. Mitsuhashi, K. Katoh, lamassemble: Multiple Alignment and Consensus Sequence of Long Reads. Methods Mol Biol 2231, 135-145 (2021). 
 
 S. M. Karst, R. M. Ziels, R. H. Kirkegaard, E. A. Sørensen, D. McDonald, Q. Zhu, R. Knight, M. Albertsen, High-accuracy long-read amplicon sequences using unique molecular identifiers with Nanopore or PacBio sequencing. Nat Methods 18, 165–169 (2021).
-
-Figures presented at Genomics in Action 2023 were created with Biorender. https://biorender.com/
