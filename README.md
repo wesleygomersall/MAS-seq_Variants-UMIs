@@ -1,5 +1,3 @@
-# WIP 
-
 # Mapping Barcodes to Genes with Long-Read Sequencing
 
 ### Wesley Gomersall, Mahmoud al Mahmoud, Grace Hach, Dr. Calin Plesa
