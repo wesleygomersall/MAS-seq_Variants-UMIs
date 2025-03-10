@@ -12,12 +12,19 @@ params.indexfile = "$baseDir/sequences/barcodes.fasta"
 
 // STATS_SCRIPT = "$baseDir/src/summary_stats_hist.py"
 // DECONCAT_SCRIPT = "$baseDir/src/deconcatenation.py"
-FILTERMAF_SCRIPT = "$baseDir/src/filterMaf.py"
-SUMMAF_SCRIPT = "$baseDir/src/summarize_maf.py"
-EXTRACT_SCRIPT = "$baseDir/src/extractRegionsFasta_withEnds.py"
+//FILTERMAF_SCRIPT = "$baseDir/src/filterMaf.py"
+//SUMMAF_SCRIPT = "$baseDir/src/summarize_maf.py"
+//EXTRACT_SCRIPT = "$baseDir/src/extractRegionsFasta_withEnds.py"
 // STARCODE_LOCATION = "/projects/bgmp/shared/groups/2022/SKU/plesa/starcode/starcode"
-LAMASSEMBLE_SCRIPT = "$baseDir/src/runLamassemble.py"
-FINALFORMAT_SCRIPT = "$baseDir/src/final_output_MSA.py"
+//LAMASSEMBLE_SCRIPT = "$baseDir/src/runLamassemble.py"
+//FINALFORMAT_SCRIPT = "$baseDir/src/final_output_MSA.py"
+
+
+FILTERMAF_SCRIPT = "/src/filterMaf.py"
+SUMMAF_SCRIPT = "/src/summarize_maf.py"
+EXTRACT_SCRIPT = "/src/extractRegionsFasta_withEnds.py"
+LAMASSEMBLE_SCRIPT = "/src/runLamassemble.py"
+FINALFORMAT_SCRIPT = "/src/final_output_MSA.py"
 
 ////////////////////////////// WORKFLOW //////////////////////////////
 

@@ -1,0 +1,60 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%files
+    src /src
+
+%environment
+    export PATH="/opt/conda/envs/M_Iso_Seq/bin:$PATH"
+    export PATH="/opt/scripts:$PATH"
+    export FILTERMAF_SCRIPT=/opt/scripts/filterMaf.py
+    export SUMMAF_SCRIPT=/opt/scripts/summarize_maf.py
+    export EXTRACT_SCRIPT=/opt/scripts/extractRegionsFasta_withEnds.py
+    export SCRIPT1=/opt/scripts/script1.py
+    export SCRIPT2=/opt/scripts/script2.py
+
+%post
+    # Install system dependencies
+    apt-get update && apt-get install -y \
+        wget \
+        bzip2 \
+        git \
+        make \
+        gcc \
+        zlib1g-dev \
+        openjdk-11-jdk \
+        python3 \
+        python3-pip && \
+        apt-get clean && \
+        rm -rf /var/lib/apt/lists/*
+
+    # Install Miniconda (x86_64 version)
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh && \
+        bash miniconda.sh -b -p /opt/conda && \
+        rm miniconda.sh
+
+    export PATH="/opt/conda/bin:$PATH"
+
+    # Create a Conda environment
+    conda create --prefix=/opt/conda/envs/M_Iso_Seq -y
+
+    # Install packages into the Conda environment
+    /opt/conda/bin/conda install -y --prefix /opt/conda/envs/M_Iso_Seq python=3.10 && \
+        /opt/conda/bin/conda install -y --prefix /opt/conda/envs/M_Iso_Seq -c bioconda nextflow && \
+        /opt/conda/bin/conda install -y --prefix /opt/conda/envs/M_Iso_Seq -c bioconda bioawk=1.0 && \
+        /opt/conda/bin/conda install -y --prefix /opt/conda/envs/M_Iso_Seq matplotlib=3.7.1 && \
+        /opt/conda/bin/conda install -y --prefix /opt/conda/envs/M_Iso_Seq biopython && \
+        /opt/conda/bin/conda install -y --prefix /opt/conda/envs/M_Iso_Seq -c bioconda last && \
+        /opt/conda/bin/conda install -y --prefix /opt/conda/envs/M_Iso_Seq regex && \
+        /opt/conda/bin/conda install -y --prefix /opt/conda/envs/M_Iso_Seq -c bioconda lima && \
+        /opt/conda/bin/conda install -y --prefix /opt/conda/envs/M_Iso_Seq -c bioconda starcode && \
+        /opt/conda/bin/conda install -y --prefix /opt/conda/envs/M_Iso_Seq -c bioconda lamassemble && \
+        /opt/conda/bin/conda install -y --prefix /opt/conda/envs/M_Iso_Seq -c bioconda pbskera && \
+        /opt/conda/bin/conda install -y --prefix /opt/conda/envs/M_Iso_Seq -c bioconda fastqc
+
+    # Ensure scripts are executable
+    chmod +x /src/*
+
+%labels
+    Author Mahmoud
+    Version 3
