@@ -68,17 +68,11 @@ process initial_stats {
     path "fastqc_output/${base_file_name}_fastqc.zip"
     path "fastqc_output/${base_file_name}_fastqc.html"
 
-    // if file format bam
-
     script:
     """
     mkdir fastqc_output
     fastqc -o fastqc_output -f bam $infile
     """
-
-    // if file format fastq
-
-    // script code chunk
 }
 
 // step 2: deconcat input file
