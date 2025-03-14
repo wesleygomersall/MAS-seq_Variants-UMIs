@@ -10,16 +10,6 @@ params.crfile = "$baseDir/sequences/conserved_regions.fasta"
 params.arrfile = "$baseDir/sequences/mas16_primers.fasta"
 params.indexfile = "$baseDir/sequences/barcodes.fasta"
 
-// STATS_SCRIPT = "$baseDir/src/summary_stats_hist.py"
-// DECONCAT_SCRIPT = "$baseDir/src/deconcatenation.py"
-//FILTERMAF_SCRIPT = "$baseDir/src/filterMaf.py"
-//SUMMAF_SCRIPT = "$baseDir/src/summarize_maf.py"
-//EXTRACT_SCRIPT = "$baseDir/src/extractRegionsFasta_withEnds.py"
-// STARCODE_LOCATION = "/projects/bgmp/shared/groups/2022/SKU/plesa/starcode/starcode"
-//LAMASSEMBLE_SCRIPT = "$baseDir/src/runLamassemble.py"
-//FINALFORMAT_SCRIPT = "$baseDir/src/final_output_MSA.py"
-
-
 FILTERMAF_SCRIPT = "/src/filterMaf.py"
 SUMMAF_SCRIPT = "/src/summarize_maf.py"
 EXTRACT_SCRIPT = "/src/extractRegionsFasta_withEnds.py"
@@ -39,14 +29,10 @@ workflow {
 
     deconcat_ch = deconcat(read_files_ch).deconcatbam
 
-    // if (params.platform == 'pacbio')
     demuxed_ch = demux(deconcat_ch)
                     .demuxfq
                     .flatten()
                     .map{file -> tuple(file.baseName, file)}
-
-    // else if (params.platform == 'nanopore')
-        // demuxed_ch = deconcat_ch
 
     prepro_ch = length_filter(demuxed_ch, "fasta").filteredfa
 
@@ -77,7 +63,6 @@ process initial_stats {
 
     input:
     tuple val(base_file_name), file(infile)
-    // val filetype
 
     output: // all outputs with base_file_name in the filename (captures png histogram and txt stats)
     path "fastqc_output/${base_file_name}_fastqc.zip"
@@ -97,7 +82,6 @@ process deconcat {
 
     input:
     tuple val(base_file_name), file(infile)
-    // val filetype
     
     output: // captures deconcat fastq (and deconcat/demux stats files for nanopore)
     tuple val("$base_file_name"), path("$base_file_name-deconcat.bam"), emit: deconcatbam
@@ -105,19 +89,9 @@ process deconcat {
 
     script:
 
-    // if (params.platform == 'pacbio')
     """
     skera split $infile $params.arrfile $base_file_name-deconcat.bam
     """
-
-    // else if (params.platform == 'nanopore') // Nanopore is already demuxed, so run stats now on each FASTQ in folder
-        // """
-        // $DECONCAT_SCRIPT -f $infile -o $base_file_name-deconcat.fastq -s $params.crfile
-        // for f in ./*-deconcat.fastq; do
-            // b=`basename \$f .fastq`
-            // $STATS_SCRIPT -f \$f -o \$b-stats -t $filetype
-        // done
-        // """
 }
 
 // step 3: demux deconcatenated file
@@ -127,7 +101,6 @@ process demux {
 
     input:
     tuple val(base_file_name), path(infile)
-    // val filetype
 
     output: // captures demuxed fastqs and stats files for pacbio (and placeholder for nanopore)
 
@@ -136,7 +109,6 @@ process demux {
     path "*.lima.*", emit: limacounts, optional: true
 
     script:
-    // if (params.platform == 'pacbio') // Pacbio is ready, run stats on each FASTQ in folder
     """
     lima --same --split $infile $params.indexfile $base_file_name\\.fastq
     
@@ -146,11 +118,6 @@ process demux {
 	fastqc -o \$b-stats -f fastq \$f
     done
     """
-
-    // else if (params.platform == 'nanopore')
-        // """
-        // echo "Already demultiplexed" > $base_file_name-already-demultiplexed.txt
-        // """
 }
 
 // step 4: length filter demuxed files
@@ -165,7 +132,6 @@ process length_filter {
     output: // captures long and short filtered FASTAs
     tuple val("$base_file_name"), path("*-prepro.fasta"), emit: filteredfa
     path "*-overlong.fasta", emit: overlongfa, optional: true
-    // path "*-stats/*", emit: filteredstats
 
     script: // splits each FASTQ into 2 FASTAs, below/above specified read length, then runs stats script again
     """
